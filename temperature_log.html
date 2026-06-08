@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>온도점검일지 — ㈜위드프레쉬</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -210,6 +211,16 @@
 //  Firebase 설정 — 본인 프로젝트 ID로 교체
 // =============================================
 const FIREBASE_URL = 'https://withfresh-haccp-default-rtdb.asia-southeast1.firebasedatabase.app';
+// =============================================
+
+// =============================================
+//  EmailJS 설정
+// =============================================
+const EMAILJS_SERVICE_ID  = 'service_gnoforb';
+const EMAILJS_TEMPLATE_ID = 'template_mn7rcwf';
+const EMAILJS_PUBLIC_KEY  = 'IaE-STUgSAuTW8kBN';
+const REVIEW_URL = 'https://kimhyunwoo0206.github.io/qc-logs/리뷰.html';
+emailjs.init(EMAILJS_PUBLIC_KEY);
 // =============================================
 
 // ── 설비 마스터 ──────────────────────────────
@@ -444,6 +455,14 @@ async function saveRecord() {
     );
     if (!res.ok) throw new Error('HTTP ' + res.status);
     showToast('저장 완료! ✓', 'success');
+
+    // ── 이메일 알림 발송 ──
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      date:           date,
+      inspector_name: inspector,
+      has_alert:      hasAlert ? '⚠ 이상있음' : '정상',
+      review_url:     REVIEW_URL
+    }).catch(err => console.warn('이메일 발송 실패:', err));
   } catch (e) {
     console.error(e);
     showToast('저장 실패 — 네트워크 또는 Firebase URL을 확인하세요.', 'error');
