@@ -3,194 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>온도점검일지 조회·결재 — ㈜위드프레쉬</title>
+  <title>QC 일지 조회·결재 — ㈜위드프레쉬</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 14px; background: #f0f2f5; color: #222; }
 
     /* ── 상단 헤더 ── */
-    .topbar {
-      background: #1a3a5c; color: #fff;
-      padding: 14px 28px; display: flex; align-items: center; gap: 16px;
-    }
+    .topbar { background: #1a3a5c; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 14px; }
     .topbar h1 { font-size: 17px; font-weight: bold; flex: 1; }
-    .topbar .badge-pending {
-      background: #e53935; color: #fff;
-      font-size: 13px; font-weight: bold;
-      padding: 4px 12px; border-radius: 20px;
-      display: none;
-    }
-    .topbar .badge-pending.show { display: inline-block; }
+    .badge-pending { background: #e53935; color: #fff; font-size: 13px; font-weight: bold; padding: 4px 12px; border-radius: 20px; display: none; }
+    .badge-pending.show { display: inline-block; }
+
+    /* ── 일지 종류 탭 ── */
+    .log-tabs { background: #fff; border-bottom: 2px solid #e0e8f0; display: flex; overflow-x: auto; }
+    .log-tab { flex: 1; min-width: 110px; padding: 13px 8px; text-align: center; font-size: 13px; font-weight: bold; color: #888; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; border: none; background: none; font-family: inherit; }
+    .log-tab.active { color: #1a3a5c; border-bottom: 3px solid #1a3a5c; }
+    .log-tab:hover { background: #f5f8fc; }
 
     /* ── 필터 영역 ── */
-    .filter-bar {
-      background: #fff; padding: 14px 28px;
-      border-bottom: 1px solid #ddd;
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    }
+    .filter-bar { background: #fff; padding: 12px 24px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .filter-bar label { font-size: 13px; color: #555; }
-    .filter-bar select, .filter-bar input {
-      padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 6px;
-      font-size: 14px; font-family: inherit;
-    }
-    .filter-bar select:focus, .filter-bar input:focus { border-color: #1a3a5c; outline: none; }
-    .btn-search {
-      padding: 8px 20px; background: #1a3a5c; color: #fff;
-      border: none; border-radius: 6px; font-size: 14px;
-      font-family: inherit; cursor: pointer; font-weight: bold;
-    }
+    .filter-bar select { padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; }
+    .filter-bar select:focus { border-color: #1a3a5c; outline: none; }
+    .btn-search { padding: 8px 20px; background: #1a3a5c; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-family: inherit; cursor: pointer; font-weight: bold; }
     .btn-search:hover { background: #0f2540; }
     .filter-group { display: flex; align-items: center; gap: 6px; }
     .radio-group { display: flex; gap: 10px; }
-    .radio-group label {
-      display: flex; align-items: center; gap: 4px;
-      cursor: pointer; font-size: 13px; color: #444;
-    }
+    .radio-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; color: #444; }
+    .period-group { display: none; }
+    .period-group.show { display: flex; align-items: center; gap: 6px; }
 
-    /* ── 메인 컨텐츠 ── */
-    .main { padding: 20px 28px; }
+    /* ── 메인 ── */
+    .main { padding: 18px 24px; }
 
-    /* 통계 카드 */
-    .stats { display: flex; gap: 12px; margin-bottom: 18px; }
-    .stat-card {
-      background: #fff; border-radius: 8px; padding: 14px 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08); flex: 1; text-align: center;
-    }
+    .stats { display: flex; gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 14px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); flex: 1; text-align: center; }
     .stat-card .num { font-size: 28px; font-weight: bold; color: #1a3a5c; }
     .stat-card .lbl { font-size: 12px; color: #888; margin-top: 2px; }
     .stat-card.pending .num { color: #e53935; }
     .stat-card.done .num { color: #2e7d32; }
 
-    /* 목록 테이블 */
     .list-wrap { background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
     .list-empty { padding: 48px; text-align: center; color: #aaa; font-size: 15px; }
 
     table { width: 100%; border-collapse: collapse; }
     thead { background: #f7f9fc; }
-    th { padding: 12px 14px; font-size: 13px; color: #555; font-weight: bold; text-align: left; border-bottom: 2px solid #eee; }
-    td { padding: 13px 14px; border-bottom: 1px solid #f0f0f0; font-size: 14px; vertical-align: middle; }
+    th { padding: 11px 12px; font-size: 13px; color: #555; font-weight: bold; text-align: left; border-bottom: 2px solid #eee; }
+    td { padding: 12px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tr.data-row { cursor: pointer; }
     tr.data-row:hover td { background: #f5f8ff; }
 
-    .status-badge {
-      display: inline-block; padding: 4px 10px; border-radius: 20px;
-      font-size: 12px; font-weight: bold;
-    }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     .status-badge.pending { background: #fff3e0; color: #e65100; }
-    .status-badge.done { background: #e8f5e9; color: #2e7d32; }
+    .status-badge.done    { background: #e8f5e9; color: #2e7d32; }
     .alert-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e53935; margin-right: 4px; }
 
     /* ── 모달 ── */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.45); z-index: 100;
-      align-items: flex-start; justify-content: center;
-      padding: 24px; overflow-y: auto;
-    }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto; }
     .modal-overlay.open { display: flex; }
-    .modal {
-      background: #fff; border-radius: 12px; width: 100%; max-width: 700px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.2);
-      animation: slideUp .2s ease;
-    }
+    .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 740px; box-shadow: 0 8px 32px rgba(0,0,0,.2); animation: slideUp .2s ease; }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-    .modal-header {
-      background: #1a3a5c; color: #fff;
-      padding: 16px 20px; border-radius: 12px 12px 0 0;
-      display: flex; align-items: center;
-    }
+    .modal-header { background: #1a3a5c; color: #fff; padding: 16px 20px; border-radius: 12px 12px 0 0; display: flex; align-items: center; }
     .modal-header h2 { flex: 1; font-size: 16px; }
-    .modal-close {
-      background: none; border: none; color: #fff; font-size: 22px;
-      cursor: pointer; line-height: 1; padding: 0 4px;
-    }
-
+    .modal-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px; }
     .modal-body { padding: 20px; }
 
-    /* 모달 기본정보 */
-    .info-row { display: flex; gap: 12px; margin-bottom: 16px; }
-    .info-item { flex: 1; }
+    .info-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .info-item { flex: 1; min-width: 120px; }
     .info-item .lbl { font-size: 12px; color: #888; margin-bottom: 3px; }
-    .info-item .val { font-size: 15px; font-weight: bold; }
+    .info-item .val { font-size: 14px; font-weight: bold; }
 
-    /* 온도 테이블 */
-    .temp-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
-    .temp-table th { background: #f7f9fc; padding: 8px 10px; border: 1px solid #e0e0e0; text-align: center; color: #555; }
-    .temp-table td { padding: 9px 10px; border: 1px solid #e0e0e0; text-align: center; }
-    .temp-table .equip-col { text-align: left; font-weight: bold; background: #fafafa; }
-    .ok { color: #2e7d32; font-weight: bold; }
+    /* 공통 상세 테이블 */
+    .detail-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
+    .detail-table th { background: #f7f9fc; padding: 8px 10px; border: 1px solid #e0e0e0; text-align: center; color: #555; font-size: 12px; }
+    .detail-table td { padding: 8px 10px; border: 1px solid #e0e0e0; }
+    .detail-table .lbl-col { font-weight: bold; background: #fafafa; text-align: left; }
+    .ok   { color: #2e7d32; font-weight: bold; }
     .fail { color: #c62828; font-weight: bold; }
 
-    /* 이상현황 */
-    .alert-box {
-      background: #fff8f8; border: 1.5px solid #ffcdd2;
-      border-radius: 8px; padding: 14px; margin-bottom: 16px;
-    }
+    .alert-box { background: #fff8f8; border: 1.5px solid #ffcdd2; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
     .alert-box h4 { color: #c62828; font-size: 13px; margin-bottom: 10px; }
     .alert-row { margin-bottom: 8px; font-size: 13px; }
-    .alert-row:last-child { margin-bottom: 0; }
     .alert-row .al { color: #555; }
     .alert-row .ac { color: #222; font-weight: bold; margin-top: 2px; }
 
-    /* 결재 영역 */
-    .approve-area {
-      border-top: 1px solid #eee; padding-top: 16px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
+    .notes-box { background: #f7f9fc; border-radius: 6px; padding: 10px 14px; font-size: 13px; color: #444; margin-bottom: 14px; }
+    .notes-box .lbl { font-size: 11px; color: #888; margin-bottom: 4px; }
+
+    .approve-area { border-top: 1px solid #eee; padding-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .approve-info { font-size: 13px; color: #888; }
     .approve-info strong { color: #2e7d32; }
     .btn-row { display: flex; gap: 10px; }
-    .btn-approve {
-      padding: 12px 24px; background: #1a3a5c; color: #fff;
-      border: none; border-radius: 8px; font-size: 15px; font-weight: bold;
-      font-family: inherit; cursor: pointer;
-    }
+    .btn-approve { padding: 12px 24px; background: #1a3a5c; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; }
     .btn-approve:hover { background: #0f2540; }
     .btn-approve:disabled { background: #aaa; cursor: not-allowed; }
-    .btn-print {
-      padding: 12px 20px; background: #fff; color: #1a3a5c;
-      border: 2px solid #1a3a5c; border-radius: 8px; font-size: 14px;
-      font-weight: bold; font-family: inherit; cursor: pointer;
-    }
+    .btn-print { padding: 12px 20px; background: #fff; color: #1a3a5c; border: 2px solid #1a3a5c; border-radius: 8px; font-size: 14px; font-weight: bold; font-family: inherit; cursor: pointer; }
     .btn-print:hover { background: #f0f4f8; }
 
-    /* ── 인쇄 영역 ── */
+    /* 인쇄 */
     #print-area { display: none; }
-
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
-      #print-area {
-        display: block !important;
-        position: fixed; inset: 0;
-        padding: 16mm 18mm;
-        font-family: 'Malgun Gothic', sans-serif;
-        font-size: 10pt;
-        color: #000;
-      }
-      .p-title {
-        font-size: 18pt; font-weight: bold; text-align: center;
-        margin-bottom: 6mm; letter-spacing: 4px;
-      }
-      .p-company { text-align: center; font-size: 9pt; color: #555; margin-bottom: 8mm; }
-      .p-meta-table { width: 100%; border-collapse: collapse; margin-bottom: 8mm; font-size: 10pt; }
-      .p-meta-table td { border: 1px solid #000; padding: 5px 8px; }
-      .p-meta-table .lbl { background: #f0f0f0; font-weight: bold; width: 80px; }
-      .p-section { font-size: 11pt; font-weight: bold; margin-bottom: 4mm; }
-      .p-temp-table { width: 100%; border-collapse: collapse; margin-bottom: 8mm; font-size: 10pt; }
-      .p-temp-table th { border: 1px solid #000; padding: 6px; background: #e8e8e8; text-align: center; }
-      .p-temp-table td { border: 1px solid #000; padding: 6px 8px; text-align: center; }
-      .p-temp-table .equip-name { text-align: left; font-weight: bold; }
-      .p-alert-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 8mm; }
-      .p-alert-table th { border: 1px solid #000; padding: 6px; background: #e8e8e8; text-align: center; }
-      .p-alert-table td { border: 1px solid #000; padding: 6px 8px; }
-      .p-sign { display: flex; justify-content: flex-end; gap: 20mm; margin-top: 8mm; }
-      .p-sign-box { border: 1px solid #000; width: 80px; text-align: center; }
-      .p-sign-box .p-sign-title { background: #f0f0f0; padding: 4px; font-size: 9pt; font-weight: bold; border-bottom: 1px solid #000; }
-      .p-sign-box .p-sign-name { padding: 12px 4px 8px; font-size: 10pt; }
-      .p-sign-box .p-sign-stamp { padding: 0 4px 8px; font-size: 8pt; color: #555; }
+      #print-area { display: block !important; position: fixed; inset: 0; padding: 14mm 18mm; font-family: 'Malgun Gothic', sans-serif; font-size: 10pt; color: #000; }
+      .p-title { font-size: 16pt; font-weight: bold; text-align: center; margin-bottom: 5mm; letter-spacing: 3px; }
+      .p-company { text-align: center; font-size: 9pt; color: #555; margin-bottom: 7mm; }
+      .p-meta { width: 100%; border-collapse: collapse; margin-bottom: 6mm; }
+      .p-meta td { border: 1px solid #000; padding: 5px 8px; font-size: 10pt; }
+      .p-meta .lbl { background: #f0f0f0; font-weight: bold; width: 70px; }
+      .p-section { font-size: 11pt; font-weight: bold; margin: 5mm 0 3mm; }
+      .p-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 5mm; }
+      .p-table th { border: 1px solid #000; padding: 5px; background: #e8e8e8; text-align: center; }
+      .p-table td { border: 1px solid #000; padding: 5px 6px; }
+      .p-sign { display: flex; justify-content: flex-end; gap: 15mm; margin-top: 8mm; }
+      .p-sign-box { border: 1px solid #000; width: 70px; text-align: center; }
+      .p-sign-title { background: #f0f0f0; padding: 3px; font-size: 9pt; font-weight: bold; border-bottom: 1px solid #000; }
+      .p-sign-name { padding: 10px 4px 6px; font-size: 10pt; }
+      .p-sign-stamp { padding: 0 4px 6px; font-size: 8pt; color: #555; }
     }
   </style>
 </head>
@@ -198,8 +128,16 @@
 
 <!-- 상단 헤더 -->
 <div class="topbar">
-  <h1>🌡 온도점검일지 — 조회·결재</h1>
+  <h1>QC 일지 조회·결재 — ㈜위드프레쉬</h1>
   <div class="badge-pending" id="badge-pending">미결재 <span id="pending-count">0</span>건</div>
+</div>
+
+<!-- 일지 종류 탭 -->
+<div class="log-tabs">
+  <button class="log-tab active" data-type="temperature" onclick="switchTab('temperature')">🌡 온도기록지</button>
+  <button class="log-tab" data-type="hygiene"     onclick="switchTab('hygiene')">🧹 위생점검</button>
+  <button class="log-tab" data-type="incoming"    onclick="switchTab('incoming')">📦 입고검수</button>
+  <button class="log-tab" data-type="pest"        onclick="switchTab('pest')">🐛 방충방서</button>
 </div>
 
 <!-- 필터 -->
@@ -208,6 +146,16 @@
     <label>조회 년월</label>
     <select id="sel-year"></select>
     <select id="sel-month"></select>
+  </div>
+  <div class="filter-group period-group" id="period-group">
+    <label>점검주기</label>
+    <select id="sel-period">
+      <option value="daily">일일점검</option>
+      <option value="weekly">주간점검</option>
+      <option value="monthly">월간점검</option>
+      <option value="quarterly">분기점검</option>
+      <option value="annual">연간점검</option>
+    </select>
   </div>
   <div class="filter-group">
     <label>결재상태</label>
@@ -222,35 +170,15 @@
 
 <!-- 메인 -->
 <div class="main">
-  <!-- 통계 -->
   <div class="stats">
-    <div class="stat-card">
-      <div class="num" id="stat-total">—</div>
-      <div class="lbl">전체 기록</div>
-    </div>
-    <div class="stat-card pending">
-      <div class="num" id="stat-pending">—</div>
-      <div class="lbl">미결재</div>
-    </div>
-    <div class="stat-card done">
-      <div class="num" id="stat-done">—</div>
-      <div class="lbl">결재완료</div>
-    </div>
+    <div class="stat-card"><div class="num" id="stat-total">—</div><div class="lbl">전체 기록</div></div>
+    <div class="stat-card pending"><div class="num" id="stat-pending">—</div><div class="lbl">미결재</div></div>
+    <div class="stat-card done"><div class="num" id="stat-done">—</div><div class="lbl">결재완료</div></div>
   </div>
-
-  <!-- 목록 -->
   <div class="list-wrap">
     <div class="list-empty" id="list-empty">년월을 선택하고 조회 버튼을 누르세요.</div>
     <table id="list-table" style="display:none">
-      <thead>
-        <tr>
-          <th>점검일자</th>
-          <th>점검자</th>
-          <th>이상</th>
-          <th>결재상태</th>
-          <th>결재일시</th>
-        </tr>
-      </thead>
+      <thead><tr id="list-header"></tr></thead>
       <tbody id="list-body"></tbody>
     </table>
   </div>
@@ -258,40 +186,14 @@
 
 <!-- 상세 모달 -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
-  <div class="modal" id="modal">
+  <div class="modal">
     <div class="modal-header">
-      <h2 id="modal-title">온도점검일지 상세</h2>
+      <h2 id="modal-title">상세 보기</h2>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- 기본정보 -->
-      <div class="info-row">
-        <div class="info-item"><div class="lbl">점검일자</div><div class="val" id="d-date">—</div></div>
-        <div class="info-item"><div class="lbl">점검자</div><div class="val" id="d-inspector">—</div></div>
-        <div class="info-item"><div class="lbl">등록시각</div><div class="val" id="d-created">—</div></div>
-      </div>
-
-      <!-- 온도 테이블 -->
-      <table class="temp-table" id="d-temp-table">
-        <thead>
-          <tr>
-            <th>점검위치</th>
-            <th>기준온도</th>
-            <th>09~10시</th>
-            <th>13~14시</th>
-            <th>17~18시</th>
-          </tr>
-        </thead>
-        <tbody id="d-temp-body"></tbody>
-      </table>
-
-      <!-- 이상현황 -->
-      <div class="alert-box" id="d-alert-box" style="display:none">
-        <h4>⚠ 이상현황 및 조치</h4>
-        <div id="d-alert-list"></div>
-      </div>
-
-      <!-- 결재 -->
+      <div class="info-row" id="modal-info"></div>
+      <div id="modal-content"></div>
       <div class="approve-area">
         <div class="approve-info" id="d-approve-info">결재 대기 중</div>
         <div class="btn-row">
@@ -303,27 +205,57 @@
   </div>
 </div>
 
-<!-- 인쇄 전용 영역 -->
 <div id="print-area"></div>
 
 <script>
-// =============================================
-//  Firebase 설정 — 본인 프로젝트 ID로 교체
-// =============================================
 const FIREBASE_URL = 'https://withfresh-haccp-default-rtdb.asia-southeast1.firebasedatabase.app';
-const CONFIRMER = '김현우 부장';   // 결재자 고정
-// =============================================
+const CONFIRMER = '김현우 부장';
 
-const EQUIP_ORDER = ['freezer','fridge1','fridge2','sauce'];
-const EQUIP_LABEL = { freezer:'동결실', fridge1:'제1냉동창고', fridge2:'제2냉동창고', sauce:'소스냉장고' };
-
-let currentRecords = {};   // { id: record }
+let currentTab = 'temperature';
+let currentRecords = {};
 let currentYear = '';
 let currentMonth = '';
+let currentPeriod = 'daily';
 let selectedId = '';
 
-// ── 년월 드롭다운 초기화 ──
-(function initSelectors() {
+// ── 탭 설정 ──────────────────────────────────────────────
+const TAB_CONFIG = {
+  temperature: {
+    label: '냉장·냉동 온도기록지',
+    path: (y, m) => `temperature_logs/${y}/${m}`,
+    headers: ['점검일자','점검자','이상','결재상태','결재일시'],
+    rowFn: renderTempRow,
+    modalFn: renderTempModal,
+    printFn: printTemp,
+  },
+  hygiene: {
+    label: '위생점검일지',
+    path: (y, m, p) => `hygiene_logs/${p}/${y}/${m}`,
+    headers: ['점검일자','점검자','주기','이상','결재상태','결재일시'],
+    rowFn: renderHygieneRow,
+    modalFn: renderHygieneModal,
+    printFn: printHygiene,
+  },
+  incoming: {
+    label: '원재료 육안검사 일지',
+    path: (y, m) => `incoming_logs/${y}/${m}`,
+    headers: ['입고일자','품명','점검자','적합여부','결재상태','결재일시'],
+    rowFn: renderIncomingRow,
+    modalFn: renderIncomingModal,
+    printFn: printIncoming,
+  },
+  pest: {
+    label: '방충·방서 점검표',
+    path: (y, m) => `pest_logs/${y}/${m}`,
+    headers: ['점검일자','점검자','포충등','바퀴트랩','쥐트랩 이상','결재상태','결재일시'],
+    rowFn: renderPestRow,
+    modalFn: renderPestModal,
+    printFn: printPest,
+  },
+};
+
+// ── 년월 초기화 ──────────────────────────────────────────
+(function init() {
   const yearSel = document.getElementById('sel-year');
   const monthSel = document.getElementById('sel-month');
   const now = new Date();
@@ -342,43 +274,60 @@ let selectedId = '';
   }
 })();
 
-// ── 기록 조회 ──
+// ── 탭 전환 ──────────────────────────────────────────────
+function switchTab(type) {
+  currentTab = type;
+  document.querySelectorAll('.log-tab').forEach(t => t.classList.toggle('active', t.dataset.type === type));
+  document.getElementById('period-group').classList.toggle('show', type === 'hygiene');
+  // 목록 초기화
+  document.getElementById('list-table').style.display = 'none';
+  document.getElementById('list-empty').textContent = '년월을 선택하고 조회 버튼을 누르세요.';
+  document.getElementById('list-empty').style.display = 'block';
+  document.getElementById('stat-total').textContent = '—';
+  document.getElementById('stat-pending').textContent = '—';
+  document.getElementById('stat-done').textContent = '—';
+  document.getElementById('badge-pending').classList.remove('show');
+  currentRecords = {};
+}
+
+// ── 조회 ─────────────────────────────────────────────────
 async function loadRecords() {
   currentYear = document.getElementById('sel-year').value;
   currentMonth = document.getElementById('sel-month').value;
-  const statusFilter = document.querySelector('input[name="status"]:checked').value;
+  currentPeriod = document.getElementById('sel-period').value;
+  const cfg = TAB_CONFIG[currentTab];
+  const path = currentTab === 'hygiene'
+    ? cfg.path(currentYear, currentMonth, currentPeriod)
+    : cfg.path(currentYear, currentMonth);
 
   document.getElementById('list-empty').textContent = '불러오는 중...';
-  document.getElementById('list-table').style.display = 'none';
   document.getElementById('list-empty').style.display = 'block';
+  document.getElementById('list-table').style.display = 'none';
 
   try {
-    const res = await fetch(`${FIREBASE_URL}/temperature_logs/${currentYear}/${currentMonth}.json`);
+    const res = await fetch(`${FIREBASE_URL}/${path}.json`);
     const data = await res.json();
-
-    if (!data) {
-      currentRecords = {};
-      renderList({}, statusFilter);
-      return;
-    }
-    currentRecords = data;
-    renderList(data, statusFilter);
+    currentRecords = data || {};
+    renderList(currentRecords);
   } catch(e) {
-    document.getElementById('list-empty').textContent = '불러오기 실패 — Firebase URL을 확인하세요.';
+    document.getElementById('list-empty').textContent = '불러오기 실패 — 네트워크를 확인하세요.';
   }
 }
 
-// ── 목록 렌더링 ──
-function renderList(data, statusFilter) {
+// ── 목록 렌더링 ──────────────────────────────────────────
+function renderList(data) {
+  const cfg = TAB_CONFIG[currentTab];
+  const statusFilter = document.querySelector('input[name="status"]:checked').value;
   const tbody = document.getElementById('list-body');
   tbody.innerHTML = '';
 
-  const records = Object.entries(data).map(([id, r]) => ({ id, ...r }));
+  // 헤더 설정
+  const hdr = document.getElementById('list-header');
+  hdr.innerHTML = cfg.headers.map(h => `<th>${h}</th>`).join('');
 
-  // 날짜 내림차순 정렬
+  const records = Object.entries(data).map(([id, r]) => ({ id, ...r }));
   records.sort((a, b) => b.meta.date.localeCompare(a.meta.date));
 
-  // 통계
   const total = records.length;
   const pending = records.filter(r => !r.meta.reviewed).length;
   const done = total - pending;
@@ -388,14 +337,9 @@ function renderList(data, statusFilter) {
   document.getElementById('stat-done').textContent = done;
 
   const badge = document.getElementById('badge-pending');
-  if (pending > 0) {
-    badge.classList.add('show');
-    document.getElementById('pending-count').textContent = pending;
-  } else {
-    badge.classList.remove('show');
-  }
+  if (pending > 0) { badge.classList.add('show'); document.getElementById('pending-count').textContent = pending; }
+  else badge.classList.remove('show');
 
-  // 필터 적용
   const filtered = records.filter(r => {
     if (statusFilter === 'pending') return !r.meta.reviewed;
     if (statusFilter === 'done') return r.meta.reviewed;
@@ -416,219 +360,320 @@ function renderList(data, statusFilter) {
     const tr = document.createElement('tr');
     tr.className = 'data-row';
     tr.onclick = () => openModal(r.id);
-
-    const statusBadge = r.meta.reviewed
-      ? `<span class="status-badge done">결재완료</span>`
-      : `<span class="status-badge pending">미결재</span>`;
-
-    const alertDot = r.has_alert ? `<span class="alert-dot"></span>이상있음` : '정상';
-
-    const reviewedAt = r.meta.reviewed_at
-      ? new Date(r.meta.reviewed_at).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
-      : '—';
-
-    tr.innerHTML = `
-      <td><strong>${r.meta.date}</strong></td>
-      <td>${r.meta.inspector}</td>
-      <td>${alertDot}</td>
-      <td>${statusBadge}</td>
-      <td>${reviewedAt}</td>
-    `;
+    tr.innerHTML = cfg.rowFn(r);
     tbody.appendChild(tr);
   });
 }
 
-// ── 모달 열기 ──
+// ── 공통 셀 헬퍼 ─────────────────────────────────────────
+function statusCell(r) {
+  return r.meta.reviewed
+    ? `<span class="status-badge done">결재완료</span>`
+    : `<span class="status-badge pending">미결재</span>`;
+}
+function reviewedAtCell(r) {
+  return r.meta.reviewed_at
+    ? new Date(r.meta.reviewed_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+    : '—';
+}
+
+// ── 온도기록지 행 ─────────────────────────────────────────
+function renderTempRow(r) {
+  const alert = r.has_alert ? `<span class="alert-dot"></span>이상` : '정상';
+  return `<td><strong>${r.meta.date}</strong></td><td>${r.meta.inspector}</td><td>${alert}</td><td>${statusCell(r)}</td><td>${reviewedAtCell(r)}</td>`;
+}
+
+// ── 위생점검 행 ───────────────────────────────────────────
+function renderHygieneRow(r) {
+  const alert = r.has_alert ? `<span class="alert-dot"></span>이상` : '정상';
+  const periodLabel = {daily:'일일',weekly:'주간',monthly:'월간',quarterly:'분기',annual:'연간'}[r.meta.period] || r.meta.period;
+  return `<td><strong>${r.meta.date}</strong></td><td>${r.meta.inspector}</td><td>${periodLabel}</td><td>${alert}</td><td>${statusCell(r)}</td><td>${reviewedAtCell(r)}</td>`;
+}
+
+// ── 입고검수 행 ───────────────────────────────────────────
+function renderIncomingRow(r) {
+  const pass = r.overall_pass ? '<span class="ok">적합</span>' : '<span class="fail">부적합</span>';
+  return `<td><strong>${r.meta.date}</strong></td><td>${r.meta.product_name||'—'}</td><td>${r.meta.inspector}</td><td>${pass}</td><td>${statusCell(r)}</td><td>${reviewedAtCell(r)}</td>`;
+}
+
+// ── 방충방서 행 ───────────────────────────────────────────
+function renderPestRow(r) {
+  const uvTotal    = r.summary?.uv_total    ?? '—';
+  const roachTotal = r.summary?.cockroach_catch ?? r.summary?.roach_total ?? '—';
+  const ratIssue   = r.summary?.rat_issue   ?? '—';
+  return `<td><strong>${r.meta.date}</strong></td><td>${r.meta.inspector}</td><td>${uvTotal}마리</td><td>${roachTotal}마리</td><td>${ratIssue}건</td><td>${statusCell(r)}</td><td>${reviewedAtCell(r)}</td>`;
+}
+
+// ── 모달 열기 ────────────────────────────────────────────
 function openModal(id) {
   selectedId = id;
   const r = currentRecords[id];
   if (!r) return;
+  const cfg = TAB_CONFIG[currentTab];
+
+  document.getElementById('modal-title').textContent = `${cfg.label} — ${r.meta.date}`;
 
   // 기본정보
-  document.getElementById('modal-title').textContent = `온도점검일지 — ${r.meta.date}`;
-  document.getElementById('d-date').textContent = r.meta.date;
-  document.getElementById('d-inspector').textContent = r.meta.inspector;
-  document.getElementById('d-created').textContent =
-    new Date(r.meta.created_at).toLocaleString('ko-KR');
+  const extraInfo = currentTab === 'incoming'
+    ? `<div class="info-item"><div class="lbl">품명</div><div class="val">${r.meta.product_name||'—'}</div></div>
+       <div class="info-item"><div class="lbl">구입처</div><div class="val">${r.meta.supplier||'—'}</div></div>
+       <div class="info-item"><div class="lbl">입고량</div><div class="val">${r.meta.qty_value||'—'} ${r.meta.qty_unit||''}</div></div>`
+    : '';
+  document.getElementById('modal-info').innerHTML = `
+    <div class="info-item"><div class="lbl">일자</div><div class="val">${r.meta.date}</div></div>
+    <div class="info-item"><div class="lbl">점검자</div><div class="val">${r.meta.inspector}</div></div>
+    <div class="info-item"><div class="lbl">등록시각</div><div class="val">${new Date(r.meta.created_at).toLocaleString('ko-KR')}</div></div>
+    ${extraInfo}
+  `;
 
-  // 온도 테이블
-  const tbody = document.getElementById('d-temp-body');
-  tbody.innerHTML = '';
-  EQUIP_ORDER.forEach(eid => {
-    const eq = r.records[eid];
-    if (!eq) return;
-    const tr = document.createElement('tr');
-    const cells = ['t1','t2','t3'].map(tk => {
-      const t = eq[tk];
-      if (!t) return '<td>—</td>';
-      const cls = t.result === '적합' ? 'ok' : (t.result === '부적합' ? 'fail' : '');
-      return `<td class="${cls}">${t.temp !== null ? t.temp + '℃' : '—'}<br><small>${t.result}</small></td>`;
-    }).join('');
-    tr.innerHTML = `<td class="equip-col">${eq.label}</td><td><small>${eq.standard}</small></td>${cells}`;
-    tbody.appendChild(tr);
-  });
-
-  // 이상현황
-  const alertBox = document.getElementById('d-alert-box');
-  const alertList = document.getElementById('d-alert-list');
-  if (r.alerts && r.alerts.length > 0) {
-    alertBox.style.display = 'block';
-    alertList.innerHTML = r.alerts.map(a => `
-      <div class="alert-row">
-        <div class="al">▸ ${a.equipment} — ${a.time}</div>
-        <div class="ac">조치: ${a.action || '(미입력)'}</div>
-      </div>
-    `).join('');
-  } else {
-    alertBox.style.display = 'none';
-  }
+  document.getElementById('modal-content').innerHTML = cfg.modalFn(r);
 
   // 결재 상태
-  const approveInfo = document.getElementById('d-approve-info');
-  const btnApprove = document.getElementById('btn-approve');
+  const btn = document.getElementById('btn-approve');
+  const info = document.getElementById('d-approve-info');
   if (r.meta.reviewed) {
     const at = new Date(r.meta.reviewed_at).toLocaleString('ko-KR');
-    approveInfo.innerHTML = `<strong>✔ 결재완료</strong> — ${r.meta.confirmed_by || CONFIRMER} (${at})`;
-    btnApprove.disabled = true;
-    btnApprove.textContent = '결재완료';
+    info.innerHTML = `<strong>✔ 결재완료</strong> — ${r.meta.confirmed_by||CONFIRMER} (${at})`;
+    btn.disabled = true; btn.textContent = '결재완료';
   } else {
-    approveInfo.textContent = '결재 대기 중';
-    btnApprove.disabled = false;
-    btnApprove.textContent = '✔ 확인 완료';
+    info.textContent = '결재 대기 중';
+    btn.disabled = false; btn.textContent = '✔ 확인 완료';
   }
 
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-}
-function closeModalOutside(e) {
-  if (e.target === document.getElementById('modal-overlay')) closeModal();
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+// ── 온도 모달 ────────────────────────────────────────────
+function renderTempModal(r) {
+  const EQUIP_ORDER = ['freezer','fridge1','fridge2','sauce'];
+  const EQUIP_LABEL = {freezer:'동결실',fridge1:'제1냉동창고',fridge2:'제2냉동창고',sauce:'소스냉장고'};
+  let rows = '';
+  EQUIP_ORDER.forEach(eid => {
+    const eq = r.records?.[eid]; if (!eq) return;
+    const cells = ['t1','t2','t3'].map(tk => {
+      const t = eq[tk]; if (!t) return '<td>—</td>';
+      const cls = t.result === '적합' ? 'ok' : (t.result === '부적합' ? 'fail' : '');
+      return `<td class="${cls}">${t.temp !== null ? t.temp+'℃' : '—'}<br><small>${t.result}</small></td>`;
+    }).join('');
+    rows += `<tr><td class="lbl-col">${eq.label||EQUIP_LABEL[eid]}</td><td><small>${eq.standard||''}</small></td>${cells}</tr>`;
+  });
+  let alertHtml = '';
+  if (r.alerts && r.alerts.length > 0) {
+    alertHtml = `<div class="alert-box"><h4>⚠ 이상현황</h4>${r.alerts.map(a =>
+      `<div class="alert-row"><div class="al">▸ ${a.equipment} — ${a.time}</div><div class="ac">조치: ${a.action||'(미입력)'}</div></div>`).join('')}</div>`;
+  }
+  return `<table class="detail-table"><thead><tr><th>점검위치</th><th>기준</th><th>09~10시</th><th>13~14시</th><th>17~18시</th></tr></thead><tbody>${rows}</tbody></table>${alertHtml}`;
 }
 
-// ── 결재 처리 ──
+// ── 위생점검 모달 ─────────────────────────────────────────
+function renderHygieneModal(r) {
+  const checks = r.checks || {};
+  const rows = Object.entries(checks).map(([id, c]) => {
+    const v = c.value === true ? '<span class="ok">예</span>' : c.value === false ? '<span class="fail">아니오</span>' : '—';
+    const action = c.value === false && c.action ? `<br><small style="color:#c62828">조치: ${c.action}</small>` : '';
+    return `<tr><td class="lbl-col" style="font-size:12px;">${c.text||id}</td><td style="text-align:center;">${v}${action}</td></tr>`;
+  }).join('');
+  const notes = r.notes ? `<div class="notes-box"><div class="lbl">특이사항</div>${r.notes}</div>` : '';
+  return `<table class="detail-table" style="font-size:12px;"><thead><tr><th style="text-align:left;">점검항목</th><th style="width:80px;">결과</th></tr></thead><tbody>${rows}</tbody></table>${notes}`;
+}
+
+// ── 입고검수 모달 ─────────────────────────────────────────
+function renderIncomingModal(r) {
+  const checks = r.checks || {};
+  const rows = Object.entries(checks).map(([id, c]) => {
+    const v = c.value === true ? '<span class="ok">적합</span>' : c.value === false ? '<span class="fail">부적합</span>' : '—';
+    const temp = c.temp !== undefined ? `<br><small>온도: ${c.temp}℃</small>` : '';
+    return `<tr><td class="lbl-col">${c.label||id}</td><td style="text-align:center;">${v}${temp}</td></tr>`;
+  }).join('');
+  const overall = r.overall_pass ? '<span class="ok">✔ 적합</span>' : '<span class="fail">✗ 부적합</span>';
+  const action = r.action_note ? `<div class="alert-box"><h4>⚠ 조치내용</h4><div>${r.action_note}</div></div>` : '';
+  return `<table class="detail-table"><thead><tr><th style="text-align:left;">점검항목</th><th style="width:90px;">결과</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div style="margin-bottom:12px;font-size:15px;font-weight:bold;">종합: ${overall}</div>${action}`;
+}
+
+// ── 방충방서 모달 ─────────────────────────────────────────
+function renderPestModal(r) {
+  // 포충등 요약
+  let uvRows = '';
+  if (r.uv_traps) {
+    Object.values(r.uv_traps).forEach(t => {
+      const total = t['합계'] || 0;
+      const cls = total > 0 ? 'fail' : '';
+      uvRows += `<tr><td class="lbl-col">${t.name}</td><td style="font-size:11px;color:#888;">${t.loc}</td>
+        <td>${t['파리']||0}</td><td>${t['나방']||0}</td><td>${t['모기']||0}</td><td>${t['하루살이']||0}</td><td>${t['기타']||0}</td>
+        <td class="${cls}" style="text-align:center;font-weight:bold;">${total}</td></tr>`;
+    });
+  }
+  // 바퀴트랩 요약
+  let roachRows = '';
+  if (r.roach_traps) {
+    Object.values(r.roach_traps).forEach(t => {
+      const total = t['합계'] || 0;
+      const cls = total > 0 ? 'fail' : '';
+      roachRows += `<tr><td class="lbl-col">${t.name}</td><td style="font-size:11px;color:#888;">${t.loc}</td>
+        <td>${t['바퀴']||0}</td><td>${t['거미']||0}</td><td>${t['개미']||0}</td><td>${t['기타']||0}</td>
+        <td class="${cls}" style="text-align:center;font-weight:bold;">${total}</td></tr>`;
+    });
+  }
+  // 쥐트랩 요약
+  let ratRows = '';
+  if (r.rat_traps) {
+    Object.values(r.rat_traps).forEach(t => {
+      const issue = t.status === 'issue';
+      ratRows += `<tr><td class="lbl-col">${t.name}</td><td style="font-size:11px;color:#888;">${t.loc}</td>
+        <td>${t['쥐']||0}</td><td>${t['기타']||0}</td>
+        <td class="${issue?'fail':''}" style="text-align:center;font-weight:bold;">${issue?'이상':'정상'}</td></tr>`;
+    });
+  }
+  const notes = r.notes ? `<div class="notes-box"><div class="lbl">개선조치</div>${r.notes}</div>` : '';
+  const deviation = r.deviation ? `<div class="notes-box"><div class="lbl">기준이탈(원인)</div>${r.deviation}</div>` : '';
+  return `
+    <p style="font-weight:bold;margin-bottom:8px;font-size:13px;">▶ 포충등 (비래해충)</p>
+    <div style="overflow-x:auto;margin-bottom:14px;">
+    <table class="detail-table" style="font-size:12px;min-width:480px;">
+      <thead><tr><th style="text-align:left;">설비명</th><th>위치</th><th>파리</th><th>나방</th><th>모기</th><th>하루살이</th><th>기타</th><th>합계</th></tr></thead>
+      <tbody>${uvRows}</tbody>
+    </table></div>
+    <p style="font-weight:bold;margin-bottom:8px;font-size:13px;">▶ 바퀴트랩 (보행해충)</p>
+    <div style="overflow-x:auto;margin-bottom:14px;">
+    <table class="detail-table" style="font-size:12px;min-width:420px;">
+      <thead><tr><th style="text-align:left;">설비명</th><th>위치</th><th>바퀴</th><th>거미</th><th>개미</th><th>기타</th><th>합계</th></tr></thead>
+      <tbody>${roachRows}</tbody>
+    </table></div>
+    <p style="font-weight:bold;margin-bottom:8px;font-size:13px;">▶ 쥐트랩 (설치류)</p>
+    <div style="overflow-x:auto;margin-bottom:14px;">
+    <table class="detail-table" style="font-size:12px;">
+      <thead><tr><th style="text-align:left;">설비명</th><th>위치</th><th>쥐</th><th>기타</th><th>상태</th></tr></thead>
+      <tbody>${ratRows}</tbody>
+    </table></div>
+    ${deviation}${notes}`;
+}
+
+// ── 결재 처리 ────────────────────────────────────────────
 async function approveRecord() {
+  const cfg = TAB_CONFIG[currentTab];
   const btn = document.getElementById('btn-approve');
-  btn.disabled = true;
-  btn.textContent = '처리 중...';
+  btn.disabled = true; btn.textContent = '처리 중...';
 
   const now = Date.now();
-  const patch = {
-    reviewed: true,
-    reviewed_at: now,
-    confirmed_by: CONFIRMER
-  };
+  const patch = { reviewed: true, reviewed_at: now, confirmed_by: CONFIRMER };
+  const path = currentTab === 'hygiene'
+    ? cfg.path(currentYear, currentMonth, currentPeriod)
+    : cfg.path(currentYear, currentMonth);
 
   try {
     const res = await fetch(
-      `${FIREBASE_URL}/temperature_logs/${currentYear}/${currentMonth}/${selectedId}/meta.json`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch)
-      }
+      `${FIREBASE_URL}/${path}/${selectedId}/meta.json`,
+      { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }
     );
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
-    // 로컬 데이터 업데이트
-    currentRecords[selectedId].meta.reviewed = true;
-    currentRecords[selectedId].meta.reviewed_at = now;
-    currentRecords[selectedId].meta.confirmed_by = CONFIRMER;
-
-    // 모달 UI 갱신
+    currentRecords[selectedId].meta = { ...currentRecords[selectedId].meta, ...patch };
     const at = new Date(now).toLocaleString('ko-KR');
-    document.getElementById('d-approve-info').innerHTML =
-      `<strong>✔ 결재완료</strong> — ${CONFIRMER} (${at})`;
+    document.getElementById('d-approve-info').innerHTML = `<strong>✔ 결재완료</strong> — ${CONFIRMER} (${at})`;
     btn.textContent = '결재완료';
 
-    // 목록 새로고침
     const statusFilter = document.querySelector('input[name="status"]:checked').value;
-    renderList(currentRecords, statusFilter);
-
+    renderList(currentRecords);
   } catch(e) {
     alert('결재 처리 실패 — 네트워크를 확인하세요.');
-    btn.disabled = false;
-    btn.textContent = '✔ 확인 완료';
+    btn.disabled = false; btn.textContent = '✔ 확인 완료';
   }
 }
 
-// ── 인쇄 ──
+// ── 인쇄 ─────────────────────────────────────────────────
 function printRecord() {
+  const cfg = TAB_CONFIG[currentTab];
   const r = currentRecords[selectedId];
   if (!r) return;
+  cfg.printFn(r);
+  window.print();
+}
 
-  // 온도 행 생성
-  const tempRows = EQUIP_ORDER.map(eid => {
-    const eq = r.records[eid];
-    if (!eq) return '';
+function printBase(r, title, bodyHtml) {
+  const reviewedStr = r.meta.reviewed
+    ? `결재완료 (${r.meta.confirmed_by||CONFIRMER}, ${new Date(r.meta.reviewed_at).toLocaleString('ko-KR')})`
+    : '미결재';
+  document.getElementById('print-area').innerHTML = `
+    <div class="p-title">${title}</div>
+    <div class="p-company">㈜위드프레쉬</div>
+    <table class="p-meta">
+      <tr><td class="lbl">점검일자</td><td>${r.meta.date}</td><td class="lbl">점검자</td><td>${r.meta.inspector}</td></tr>
+      <tr><td class="lbl">결재상태</td><td colspan="3">${reviewedStr}</td></tr>
+    </table>
+    ${bodyHtml}
+    <div class="p-sign">
+      <div class="p-sign-box"><div class="p-sign-title">점검자</div><div class="p-sign-name">${r.meta.inspector}</div><div class="p-sign-stamp">(인)</div></div>
+      <div class="p-sign-box"><div class="p-sign-title">확인자</div><div class="p-sign-name">${r.meta.reviewed ? (r.meta.confirmed_by||CONFIRMER) : ''}</div><div class="p-sign-stamp">(인)</div></div>
+    </div>`;
+}
+
+function printTemp(r) {
+  const EQUIP_ORDER = ['freezer','fridge1','fridge2','sauce'];
+  const rows = EQUIP_ORDER.map(eid => {
+    const eq = r.records?.[eid]; if (!eq) return '';
     const cells = ['t1','t2','t3'].map(tk => {
       const t = eq[tk];
-      const val = t && t.temp !== null ? `${t.temp}℃` : '—';
-      const res = t ? t.result : '—';
-      const style = res === '부적합' ? 'color:#c00;font-weight:bold' : '';
-      return `<td style="${style}">${val}<br><small>${res}</small></td>`;
+      const val = t?.temp !== null ? `${t.temp}℃` : '—';
+      const res = t?.result || '—';
+      return `<td>${val} / ${res}</td>`;
     }).join('');
-    return `<tr><td class="equip-name">${eq.label}</td><td><small>${eq.standard}</small></td>${cells}</tr>`;
+    return `<tr><td>${eq.label}</td><td><small>${eq.standard}</small></td>${cells}</tr>`;
   }).join('');
+  printBase(r, '냉장·냉동 온도기록지', `
+    <div class="p-section">■ 온도 점검현황</div>
+    <table class="p-table"><thead><tr><th>점검위치</th><th>기준</th><th>09~10시</th><th>13~14시</th><th>17~18시</th></tr></thead><tbody>${rows}</tbody></table>`);
+}
 
-  // 이상현황 행 생성
-  const alertRows = (r.alerts && r.alerts.length > 0)
-    ? r.alerts.map(a => `<tr><td>${a.equipment} — ${a.time}</td><td>${a.action || '(미입력)'}</td></tr>`).join('')
-    : `<tr><td colspan="2" style="text-align:center;color:#888">이상 없음</td></tr>`;
+function printHygiene(r) {
+  const checks = r.checks || {};
+  const rows = Object.entries(checks).map(([id, c]) => {
+    const v = c.value === true ? '예' : c.value === false ? '아니오' : '—';
+    return `<tr><td style="font-size:9pt;">${c.text||id}</td><td style="text-align:center;">${v}</td><td>${c.action||''}</td></tr>`;
+  }).join('');
+  printBase(r, '위생점검일지', `
+    <div class="p-section">■ 점검항목</div>
+    <table class="p-table"><thead><tr><th>점검항목</th><th>결과</th><th>조치</th></tr></thead><tbody>${rows}</tbody></table>
+    ${r.notes ? `<div class="p-section">■ 특이사항</div><p>${r.notes}</p>` : ''}`);
+}
 
-  const reviewedStr = r.meta.reviewed
-    ? `결재완료 (${r.meta.confirmed_by || CONFIRMER}, ${new Date(r.meta.reviewed_at).toLocaleString('ko-KR')})`
-    : '미결재';
-
-  document.getElementById('print-area').innerHTML = `
-    <div class="p-title">온도 점검 일지</div>
-    <div class="p-company">㈜위드프레쉬</div>
-    <table class="p-meta-table">
-      <tr>
-        <td class="lbl">점검일자</td>
-        <td>${r.meta.date}</td>
-        <td class="lbl">점검자</td>
-        <td>${r.meta.inspector}</td>
-      </tr>
-      <tr>
-        <td class="lbl">결재상태</td>
-        <td colspan="3">${reviewedStr}</td>
-      </tr>
+function printIncoming(r) {
+  const checks = r.checks || {};
+  const rows = Object.entries(checks).map(([id, c]) => {
+    const v = c.value === true ? '적합' : c.value === false ? '부적합' : '—';
+    const temp = c.temp !== undefined ? ` (${c.temp}℃)` : '';
+    return `<tr><td>${c.label||id}</td><td style="text-align:center;">${v}${temp}</td></tr>`;
+  }).join('');
+  printBase(r, '원재료 육안검사 일지', `
+    <table class="p-meta" style="margin-bottom:5mm;">
+      <tr><td class="lbl">품명</td><td>${r.meta.product_name||'—'}</td><td class="lbl">구입처</td><td>${r.meta.supplier||'—'}</td></tr>
+      <tr><td class="lbl">입고량</td><td>${r.meta.qty_value||'—'} ${r.meta.qty_unit||''}</td><td class="lbl">종합</td><td>${r.overall_pass ? '적합' : '부적합'}</td></tr>
     </table>
+    <div class="p-section">■ 검사항목</div>
+    <table class="p-table"><thead><tr><th>항목</th><th>결과</th></tr></thead><tbody>${rows}</tbody></table>
+    ${r.action_note ? `<div class="p-section">■ 조치내용</div><p>${r.action_note}</p>` : ''}`);
+}
 
-    <div class="p-section">■ 온도점검현황</div>
-    <table class="p-temp-table">
-      <thead>
-        <tr>
-          <th>점검위치</th><th>기준온도</th>
-          <th>09~10시</th><th>13~14시</th><th>17~18시</th>
-        </tr>
-      </thead>
-      <tbody>${tempRows}</tbody>
-    </table>
-
-    <div class="p-section">■ 이상현황 및 조치</div>
-    <table class="p-alert-table">
-      <thead><tr><th>이상내용</th><th>조치사항</th></tr></thead>
-      <tbody>${alertRows}</tbody>
-    </table>
-
-    <div class="p-sign">
-      <div class="p-sign-box">
-        <div class="p-sign-title">점검자</div>
-        <div class="p-sign-name">${r.meta.inspector}</div>
-        <div class="p-sign-stamp">(인)</div>
-      </div>
-      <div class="p-sign-box">
-        <div class="p-sign-title">확인자</div>
-        <div class="p-sign-name">${r.meta.reviewed ? (r.meta.confirmed_by || CONFIRMER) : ''}</div>
-        <div class="p-sign-stamp">(인)</div>
-      </div>
-    </div>
-  `;
-
-  window.print();
+function printPest(r) {
+  const uvRows = r.uv_traps ? Object.values(r.uv_traps).map(t =>
+    `<tr><td>${t.name}</td><td>${t.loc}</td><td>${t['파리']||0}</td><td>${t['나방']||0}</td><td>${t['모기']||0}</td><td>${t['하루살이']||0}</td><td>${t['기타']||0}</td><td>${t['합계']||0}</td></tr>`).join('') : '';
+  const roachRows = r.roach_traps ? Object.values(r.roach_traps).map(t =>
+    `<tr><td>${t.name}</td><td>${t.loc}</td><td>${t['바퀴']||0}</td><td>${t['거미']||0}</td><td>${t['개미']||0}</td><td>${t['기타']||0}</td><td>${t['합계']||0}</td></tr>`).join('') : '';
+  const ratRows = r.rat_traps ? Object.values(r.rat_traps).map(t =>
+    `<tr><td>${t.name}</td><td>${t.loc}</td><td>${t['쥐']||0}</td><td>${t['기타']||0}</td><td>${t.status==='issue'?'이상':'정상'}</td></tr>`).join('') : '';
+  printBase(r, '방충·방서 점검표', `
+    <div class="p-section">■ 포충등 (비래해충)</div>
+    <table class="p-table"><thead><tr><th>설비명</th><th>위치</th><th>파리</th><th>나방</th><th>모기</th><th>하루살이</th><th>기타</th><th>합계</th></tr></thead><tbody>${uvRows}</tbody></table>
+    <div class="p-section">■ 바퀴트랩 (보행해충)</div>
+    <table class="p-table"><thead><tr><th>설비명</th><th>위치</th><th>바퀴</th><th>거미</th><th>개미</th><th>기타</th><th>합계</th></tr></thead><tbody>${roachRows}</tbody></table>
+    <div class="p-section">■ 쥐트랩 (설치류)</div>
+    <table class="p-table"><thead><tr><th>설비명</th><th>위치</th><th>쥐</th><th>기타</th><th>상태</th></tr></thead><tbody>${ratRows}</tbody></table>
+    ${r.deviation ? `<div class="p-section">■ 기준이탈</div><p>${r.deviation}</p>` : ''}
+    ${r.notes ? `<div class="p-section">■ 개선조치</div><p>${r.notes}</p>` : ''}`);
 }
 </script>
 </body>
